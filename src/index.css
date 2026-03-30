@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -20,10 +20,12 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(223, 158, 72, 0.24), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(71, 107, 94, 0.18), transparent 30%),
-    linear-gradient(180deg, #f8f1e6 0%, #f4ecde 46%, #f7f4ee 100%);
-  color: #231a15;
+    radial-gradient(circle at 12% 18%, rgba(255, 95, 162, 0.24), transparent 24%),
+    radial-gradient(circle at 84% 12%, rgba(76, 201, 255, 0.28), transparent 24%),
+    radial-gradient(circle at 82% 72%, rgba(255, 216, 79, 0.24), transparent 22%),
+    radial-gradient(circle at 18% 86%, rgba(118, 102, 255, 0.2), transparent 24%),
+    linear-gradient(180deg, #fff9ff 0%, #f6f4ff 48%, #fff7f3 100%);
+  color: #3e3269;
   font-family: 'Noto Sans KR', sans-serif;
 }
 
@@ -34,11 +36,12 @@ body::before {
   pointer-events: none;
   content: '';
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.22) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
-  background-size: 18px 18px;
-  mask-image: radial-gradient(circle at center, black, transparent 88%);
-  opacity: 0.22;
+    radial-gradient(circle, rgba(255, 255, 255, 0.75) 1.6px, transparent 1.6px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.45) 1px, transparent 1px);
+  background-position: 0 0, 12px 12px;
+  background-size: 24px 24px;
+  mask-image: linear-gradient(180deg, black, transparent 92%);
+  opacity: 0.48;
 }
 
 #root {
@@ -50,18 +53,18 @@ body::before {
   h2,
   h3,
   .font-display {
-    font-family: 'Fraunces', serif;
+    font-family: 'Jua', sans-serif;
     letter-spacing: -0.03em;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply rounded-[28px] border border-white/70 bg-base-100/85 shadow-float backdrop-blur;
+    @apply relative rounded-[30px] border border-white/80 bg-gradient-to-br from-white/95 via-white/75 to-pink-50/80 shadow-float backdrop-blur;
   }
 
   .section-card {
-    @apply rounded-[24px] border border-stone-200/80 bg-base-100/85 p-5 shadow-sm backdrop-blur;
+    @apply relative overflow-hidden rounded-[28px] border border-white/80 bg-gradient-to-br from-white/95 via-slate-50/80 to-sky-50/80 p-5 shadow-candy backdrop-blur;
   }
 
   .section-title {
@@ -69,10 +72,81 @@ body::before {
   }
 
   .subtle-label {
-    @apply text-xs font-semibold uppercase tracking-[0.24em] text-base-content/55;
+    @apply text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/70;
   }
 
   .soft-divider {
-    @apply border-t border-dashed border-stone-300/70;
+    @apply border-t border-dashed border-primary/20;
+  }
+
+  .story-card {
+    @apply relative overflow-hidden rounded-[32px] border border-white/80 bg-gradient-to-br from-pink-200/70 via-white/80 to-yellow-100/70 shadow-float;
+  }
+
+  .fun-pill {
+    @apply rounded-full border border-white/80 bg-white/80 px-3 py-1 text-xs font-semibold text-base-content shadow-sticker;
+  }
+
+  .list-row {
+    @apply rounded-[24px] border border-white/90 bg-white/75 shadow-sm backdrop-blur;
+  }
+
+  .spark-badge {
+    @apply rounded-full border border-white/80 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content shadow-sticker;
+  }
+
+  .fun-input {
+    @apply border-white/80 bg-white/90 shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/20;
+  }
+
+  .gradient-button {
+    @apply border-none bg-gradient-to-r from-primary via-rose-400 to-orange-300 text-white shadow-sticker;
+  }
+
+  .nav-shell {
+    @apply rounded-[30px] border border-white/80 bg-white/80 shadow-float backdrop-blur;
+  }
+}
+
+.glass-card::after,
+.section-card::after,
+.story-card::after {
+  position: absolute;
+  inset: auto auto -42px -28px;
+  width: 116px;
+  height: 116px;
+  border-radius: 9999px;
+  content: '';
+  background: radial-gradient(circle, rgba(255, 216, 79, 0.28), transparent 68%);
+  pointer-events: none;
+}
+
+.section-card::before,
+.story-card::before {
+  position: absolute;
+  inset: -18px -18px auto auto;
+  width: 88px;
+  height: 88px;
+  border-radius: 9999px;
+  content: '';
+  background: radial-gradient(circle, rgba(76, 201, 255, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
+.drift-slow {
+  animation: drift-slow 8s ease-in-out infinite;
+}
+
+.drift-delay {
+  animation: drift-slow 10s ease-in-out -3s infinite;
+}
+
+@keyframes drift-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, 10px, 0) scale(1.05);
   }
 }

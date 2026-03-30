@@ -41,6 +41,35 @@ const STATUS_TONE_CLASSES = {
   error: 'bg-error',
 }
 
+const STAT_CARD_THEMES = [
+  {
+    shell: 'from-pink-200/75 via-white to-rose-100/80',
+    value: 'text-pink-600',
+  },
+  {
+    shell: 'from-sky-200/75 via-white to-cyan-100/80',
+    value: 'text-sky-600',
+  },
+  {
+    shell: 'from-yellow-200/80 via-white to-orange-100/85',
+    value: 'text-orange-500',
+  },
+]
+
+const TOP_CARD_THEMES = [
+  'from-pink-300/60 via-white to-yellow-200/70',
+  'from-sky-300/60 via-white to-cyan-200/70',
+  'from-violet-300/60 via-white to-fuchsia-200/70',
+  'from-emerald-300/60 via-white to-lime-200/70',
+  'from-orange-300/60 via-white to-amber-200/70',
+]
+
+const RANK_BADGE_THEMES = [
+  'from-yellow-300 to-orange-300 text-orange-900',
+  'from-sky-300 to-cyan-300 text-sky-900',
+  'from-violet-300 to-fuchsia-300 text-violet-900',
+]
+
 function indexBy(items, keyField) {
   return items.reduce((map, item) => {
     map[item[keyField]] = item
@@ -81,6 +110,18 @@ function getDraftKey(userId, dateKey) {
 
 function formatScore(score) {
   return Number(score || 0).toFixed(1)
+}
+
+function getStatCardTheme(index) {
+  return STAT_CARD_THEMES[index % STAT_CARD_THEMES.length]
+}
+
+function getTopCardTheme(index) {
+  return TOP_CARD_THEMES[index % TOP_CARD_THEMES.length]
+}
+
+function getRankBadgeTheme(index) {
+  return RANK_BADGE_THEMES[index % RANK_BADGE_THEMES.length]
 }
 
 function App() {
@@ -399,25 +440,30 @@ function App() {
   return (
     <div data-theme="church" className="min-h-screen">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pb-28 pt-4 sm:max-w-6xl sm:px-6 sm:pb-12">
-        <header className="glass-card mb-4 overflow-hidden p-4">
-          <div className="absolute -right-14 -top-20 h-32 w-32 rounded-full bg-accent/20 blur-3xl" />
-          <div className="absolute -bottom-20 left-0 h-24 w-24 rounded-full bg-secondary/20 blur-3xl" />
+        <header className="glass-card mb-4 overflow-hidden p-4 sm:p-5">
+          <div className="drift-slow absolute -right-14 -top-20 h-32 w-32 rounded-full bg-accent/25 blur-3xl" />
+          <div className="drift-delay absolute -bottom-20 left-0 h-24 w-24 rounded-full bg-secondary/25 blur-3xl" />
           <div className="relative">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="subtle-label">Bible Reading Check</p>
-                <h1 className="font-display text-xl leading-tight text-base-content sm:text-2xl">
+                <h1 className="font-display text-[1.35rem] leading-tight text-base-content sm:text-[1.7rem]">
                   구리교회 중고등부
                 </h1>
                 <p className="mt-1 truncate text-xs text-base-content/60 sm:text-sm">
                   {PROGRAM_LABEL} · 빌립보서 3장부터 하루 1장씩
                 </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="fun-pill">하루 한 장</span>
+                  <span className="fun-pill">읽기 체크</span>
+                  <span className="fun-pill">QT 출석</span>
+                </div>
               </div>
-              <div className="shrink-0 rounded-[18px] border border-stone-200/80 bg-base-100/85 px-3 py-2 text-right">
+              <div className="shrink-0 rounded-[22px] border border-white/85 bg-white/80 px-3 py-2 text-right shadow-sticker">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
                   사용자
                 </p>
-                <p className="mt-1 text-sm font-semibold text-base-content">
+                <p className="mt-1 text-sm font-semibold text-base-content sm:text-base">
                   {isAuthenticated && activeUser ? activeUser.name : '미인증'}
                 </p>
                 <p className="mt-0.5 text-xs text-base-content/55">
@@ -428,7 +474,7 @@ function App() {
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-2 rounded-[18px] bg-base-100/65 px-3 py-2 text-xs text-base-content/65">
+            <div className="mt-3 flex items-center gap-2 rounded-[20px] border border-white/80 bg-white/72 px-3 py-2 text-xs text-base-content/65 shadow-sm">
               <span
                 className={`h-2.5 w-2.5 shrink-0 rounded-full ${
                   STATUS_TONE_CLASSES[banner.tone] ?? STATUS_TONE_CLASSES.info
@@ -437,7 +483,7 @@ function App() {
               <p className="truncate">{banner.message}</p>
             </div>
 
-            <details className="collapse collapse-arrow mt-3 rounded-[20px] border border-stone-200/80 bg-base-100/70">
+            <details className="collapse collapse-arrow mt-3 rounded-[24px] border border-white/80 bg-white/72 shadow-sm">
               <summary className="collapse-title min-h-0 px-4 py-3 text-sm font-semibold text-base-content">
                 관리 도구 열기
               </summary>
@@ -445,7 +491,7 @@ function App() {
                 <div className="grid gap-2 sm:grid-cols-3">
                   <button
                     type="button"
-                    className="btn btn-primary rounded-2xl"
+                    className="btn gradient-button rounded-2xl"
                     onClick={handleInitialize}
                     disabled={busyAction === 'init'}
                   >
@@ -454,7 +500,7 @@ function App() {
 
                   <button
                     type="button"
-                    className="btn btn-ghost rounded-2xl border border-stone-200 bg-base-100/70"
+                    className="btn rounded-2xl border border-white/85 bg-white/85 text-base-content shadow-sm hover:bg-sky-50"
                     onClick={handleRefresh}
                     disabled={busyAction === 'refresh'}
                   >
@@ -463,7 +509,7 @@ function App() {
 
                   <button
                     type="button"
-                    className="btn btn-outline rounded-2xl border-stone-300"
+                    className="btn rounded-2xl border border-violet-200 bg-violet-50/80 text-violet-700 shadow-sm hover:bg-violet-100"
                     onClick={handleLogout}
                     disabled={!isAuthenticated}
                   >
@@ -480,7 +526,7 @@ function App() {
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
-                className="section-card h-32 animate-pulse bg-base-100/70"
+                className="section-card h-32 animate-pulse bg-white/70"
               />
             ))}
           </main>
@@ -539,7 +585,7 @@ function App() {
         )}
 
         {isAuthenticated ? (
-          <nav className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-[28px] border border-white/70 bg-base-100/92 p-2 shadow-float backdrop-blur sm:static sm:mt-6 sm:w-full sm:max-w-none sm:translate-x-0">
+          <nav className="nav-shell fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 p-2 sm:static sm:mt-6 sm:w-full sm:max-w-none sm:translate-x-0">
             <div className="grid grid-cols-3 gap-2">
               {NAV_ITEMS.map((item) => (
                 <NavLink
@@ -548,10 +594,10 @@ function App() {
                   end={item.to === '/'}
                   className={({ isActive }) =>
                     [
-                      'rounded-[20px] px-4 py-3 text-center text-sm font-semibold transition',
+                      'rounded-[22px] px-4 py-3 text-center text-sm font-semibold transition',
                       isActive
-                        ? 'bg-primary text-primary-content shadow-sm'
-                        : 'text-base-content/60 hover:bg-base-200/80',
+                        ? 'bg-gradient-to-r from-primary via-fuchsia-400 to-orange-300 text-white shadow-sticker'
+                        : 'text-base-content/65 hover:bg-sky-50/90',
                     ].join(' ')
                   }
                 >
@@ -579,7 +625,7 @@ function AuthGate({ authError, defaultName, users, onLogin }) {
   }
 
   return (
-    <section className="glass-card p-5 sm:p-8">
+    <section className="story-card p-5 sm:p-8">
       <div className="max-w-xl">
         <p className="subtle-label">Name Authentication</p>
         <h2 className="section-title mt-1">이름을 입력해 입장해 주세요</h2>
@@ -587,6 +633,11 @@ function AuthGate({ authError, defaultName, users, onLogin }) {
           접속 시 입력한 이름은 쿠키에 저장되고, 이후에는 해당 이름으로 사용자 정보를 찾아
           화면에서 계속 사용합니다.
         </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="fun-pill">쿠키 자동 로그인</span>
+          <span className="fun-pill">내 점수 바로 확인</span>
+          <span className="fun-pill">교사 권한 자동 적용</span>
+        </div>
       </div>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -595,7 +646,7 @@ function AuthGate({ authError, defaultName, users, onLogin }) {
           <input
             list="church-user-names"
             type="text"
-            className="input input-bordered h-14 rounded-[22px] border-stone-200/90 bg-base-100/90 text-base"
+            className="input fun-input h-14 rounded-[24px] text-base"
             placeholder="명단에 있는 이름을 정확히 입력해 주세요"
             value={nameInput}
             onChange={(event) => setNameInput(event.target.value)}
@@ -609,7 +660,7 @@ function AuthGate({ authError, defaultName, users, onLogin }) {
           </datalist>
         </label>
 
-        <div className="rounded-[22px] bg-base-200/55 p-4">
+        <div className="rounded-[24px] border border-white/80 bg-white/75 p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
             안내
           </p>
@@ -622,7 +673,7 @@ function AuthGate({ authError, defaultName, users, onLogin }) {
           </p>
         </div>
 
-        <button type="submit" className="btn btn-primary h-14 w-full rounded-[22px] text-base">
+        <button type="submit" className="btn gradient-button h-14 w-full rounded-[24px] text-base">
           이름으로 인증하기
         </button>
       </form>
@@ -673,16 +724,16 @@ function DashboardPage({
 
   return (
     <div className="space-y-4">
-      <section className="glass-card overflow-hidden p-5">
+      <section className="story-card overflow-hidden p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="subtle-label">My Bible Journey</p>
-            <h2 className="section-title mt-1 text-[1.85rem]">{activeUser.name}</h2>
+            <h2 className="section-title mt-1 text-[1.95rem]">{activeUser.name}</h2>
             <p className="mt-2 text-sm text-base-content/65">
               {activeUser.className ?? '공동 리더'} · {ROLE_LABELS[activeUser.role]}
             </p>
           </div>
-          <span className="badge badge-lg badge-secondary badge-outline px-4 py-3">
+          <span className="spark-badge">
             {programPhase === 'before'
               ? '준비 중'
               : programPhase === 'after'
@@ -694,9 +745,9 @@ function DashboardPage({
         <p className="mt-4 text-sm leading-6 text-base-content/70">{phaseCopy}</p>
 
         <div className="mt-5 grid grid-cols-3 gap-3">
-          <StatCard label="누적 점수" value={`${currentStats.score}점`} />
-          <StatCard label="개인 순위" value={userRank ? `${userRank}위` : '-'} />
-          <StatCard label="진행률" value={`${completionRate}%`} />
+          <StatCard label="누적 점수" value={`${currentStats.score}점`} index={0} />
+          <StatCard label="개인 순위" value={userRank ? `${userRank}위` : '-'} index={1} />
+          <StatCard label="진행률" value={`${completionRate}%`} index={2} />
         </div>
 
         <div className="soft-divider mt-5 pt-4">
@@ -712,11 +763,11 @@ function DashboardPage({
                 </p>
               ) : null}
             </div>
-            <div className="rounded-[22px] bg-accent/15 px-4 py-3 text-right">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-content/65">
+            <div className="rounded-[24px] border border-white/80 bg-white/75 px-4 py-3 text-right shadow-sticker">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/65">
                 완료 기록
               </p>
-              <p className="mt-1 text-xl font-semibold text-accent-content">
+              <p className="mt-1 text-xl font-semibold text-primary">
                 {currentStats.completionCount}회
               </p>
             </div>
@@ -740,16 +791,20 @@ function DashboardPage({
         {currentClass ? (
           <>
             <div className="mt-4 grid grid-cols-3 gap-3">
-              <StatCard label="분반" value={currentClass.className} />
-              <StatCard label="평균 점수" value={`${formatScore(currentClass.averageScore)}점`} />
-              <StatCard label="누적 점수" value={`${currentClass.totalScore}점`} />
+              <StatCard label="분반" value={currentClass.className} index={0} />
+              <StatCard
+                label="평균 점수"
+                value={`${formatScore(currentClass.averageScore)}점`}
+                index={1}
+              />
+              <StatCard label="누적 점수" value={`${currentClass.totalScore}점`} index={2} />
             </div>
 
             <div className="mt-5 space-y-3">
               {currentClass.members.map((member) => (
                 <article
                   key={member.userId}
-                  className="flex items-center justify-between rounded-[22px] border border-stone-200/80 bg-base-200/40 px-4 py-3"
+                  className="list-row flex items-center justify-between gap-3 px-4 py-3"
                 >
                   <div>
                     <p className="font-semibold text-base-content">{member.name}</p>
@@ -788,7 +843,7 @@ function DashboardPage({
           <section key={group.month} className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <h4 className="font-display text-xl text-base-content">{group.month}월 일정</h4>
-              <span className="text-xs font-semibold text-base-content/50">
+              <span className="fun-pill">
                 {group.items.length}일
               </span>
             </div>
@@ -824,7 +879,7 @@ function ClassesPage({ classLeaderboard }) {
 
   return (
     <div className="space-y-4">
-      <section className="glass-card p-5">
+      <section className="story-card p-5">
         <p className="subtle-label">Class Ranking</p>
         <h2 className="section-title mt-1">분반 정보</h2>
         <p className="mt-3 text-sm leading-6 text-base-content/70">
@@ -834,7 +889,10 @@ function ClassesPage({ classLeaderboard }) {
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {classLeaderboard.slice(0, 5).map((classInfo, index) => (
-          <article key={classInfo.classId} className="section-card">
+          <article
+            key={classInfo.classId}
+            className={`section-card bg-gradient-to-br ${getTopCardTheme(index)}`}
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/70">
               Top {index + 1}
             </p>
@@ -861,7 +919,7 @@ function ClassesPage({ classLeaderboard }) {
           <article key={classInfo.classId} className="section-card">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="subtle-label">#{index + 1}</p>
+                <p className="spark-badge inline-flex">#{index + 1}</p>
                 <h3 className="mt-1 font-display text-2xl text-base-content">
                   {classInfo.className}
                 </h3>
@@ -880,7 +938,7 @@ function ClassesPage({ classLeaderboard }) {
             </div>
 
             <progress
-              className="progress progress-primary mt-4 h-3 w-full"
+              className="progress progress-primary mt-4 h-4 w-full rounded-full"
               value={classInfo.averageScore}
               max={topAverage || 1}
             />
@@ -908,7 +966,7 @@ function UsersPage({
 }) {
   return (
     <div className="space-y-4">
-      <section className="glass-card p-5">
+      <section className="story-card p-5">
         <p className="subtle-label">Personal Ranking</p>
         <h2 className="section-title mt-1">개인 정보</h2>
         <p className="mt-3 text-sm leading-6 text-base-content/70">
@@ -921,10 +979,16 @@ function UsersPage({
         {userLeaderboard.slice(0, 10).map((user, index) => (
           <article
             key={user.userId}
-            className="section-card flex items-center justify-between gap-4"
+            className={`section-card flex items-center justify-between gap-4 ${
+              index < 3 ? `bg-gradient-to-r ${getTopCardTheme(index)}` : ''
+            }`}
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-primary text-lg font-semibold text-primary-content">
+              <div
+                className={`flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br ${getRankBadgeTheme(
+                  index,
+                )} text-lg font-semibold shadow-sticker`}
+              >
                 {index + 1}
               </div>
               <div>
@@ -956,7 +1020,7 @@ function UsersPage({
             </span>
             <input
               type="date"
-              className="input input-bordered rounded-2xl border-stone-200/90 bg-base-100/90"
+              className="input fun-input rounded-2xl"
               min={PROGRAM_START}
               max={PROGRAM_END}
               value={qtDate}
@@ -974,7 +1038,7 @@ function UsersPage({
               return (
                 <article
                   key={student.userId}
-                  className="flex items-center justify-between gap-4 rounded-[22px] border border-stone-200/80 bg-base-200/40 px-4 py-3"
+                  className="list-row flex items-center justify-between gap-4 px-4 py-3"
                 >
                   <div>
                     <p className="font-semibold text-base-content">{student.name}</p>
@@ -988,7 +1052,9 @@ function UsersPage({
                   <button
                     type="button"
                     className={`btn rounded-2xl ${
-                      checked ? 'btn-secondary' : 'btn-outline btn-primary'
+                      checked
+                        ? 'border-none bg-gradient-to-r from-emerald-400 to-teal-300 text-teal-950 shadow-sticker'
+                        : 'border border-primary/20 bg-white/90 text-primary shadow-sm hover:bg-pink-50'
                     }`}
                     onClick={() => onToggleQt(student)}
                     disabled={busyAction === `qt-${student.userId}`}
@@ -1033,11 +1099,11 @@ function ReadingPlanCard({
   return (
     <details
       open={planItem.date === todayKeyValue}
-      className="collapse collapse-arrow rounded-[24px] border border-stone-200/80 bg-base-100/90 shadow-sm"
+      className="collapse collapse-arrow overflow-hidden rounded-[28px] border border-white/90 bg-gradient-to-br from-white/95 via-white/85 to-sky-50/85 shadow-candy"
     >
       <summary className="collapse-title px-4 py-4">
         <div className="flex items-start gap-4">
-          <div className="rounded-[18px] bg-primary/10 px-3 py-2 text-center">
+          <div className="rounded-[22px] bg-gradient-to-br from-primary/20 via-fuchsia-100 to-orange-100 px-3 py-2 text-center shadow-sticker">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/70">
               Day
             </p>
@@ -1054,7 +1120,9 @@ function ReadingPlanCard({
             </p>
           </div>
           <div className="text-right">
-            <span className={`badge ${status.badgeClass}`}>{status.label}</span>
+            <span className={`badge ${status.badgeClass} rounded-full px-3 py-3 shadow-sm`}>
+              {status.label}
+            </span>
             {record ? (
               <p className="mt-2 text-xs font-semibold text-base-content/55">
                 +{record.score}점
@@ -1066,7 +1134,7 @@ function ReadingPlanCard({
 
       <div className="collapse-content space-y-4">
         {record ? (
-          <div className="rounded-[22px] bg-secondary/8 p-4">
+          <div className="rounded-[24px] border border-white/80 bg-gradient-to-br from-sky-100/70 via-white to-cyan-50/70 p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary/75">
               저장된 기록
             </p>
@@ -1085,7 +1153,7 @@ function ReadingPlanCard({
         ) : null}
 
         {disabled ? (
-          <div className="rounded-[22px] bg-base-200/70 p-4 text-sm leading-6 text-base-content/65">
+          <div className="rounded-[24px] border border-dashed border-violet-200 bg-violet-50/70 p-4 text-sm leading-6 text-base-content/65">
             아직 해당 날짜가 오지 않아 체크를 열지 않았습니다.
           </div>
         ) : (
@@ -1094,7 +1162,7 @@ function ReadingPlanCard({
               <span className="mb-2 text-sm font-semibold text-base-content/70">성경 구절</span>
               <input
                 type="text"
-                className="input input-bordered rounded-2xl border-stone-200/90 bg-base-100/90"
+                className="input fun-input rounded-2xl"
                 placeholder="기억에 남은 구절을 적어 주세요"
                 value={draft.verse ?? record?.verse ?? ''}
                 onChange={(event) =>
@@ -1108,7 +1176,7 @@ function ReadingPlanCard({
                 묵상한 내용
               </span>
               <textarea
-                className="textarea textarea-bordered min-h-28 rounded-2xl border-stone-200/90 bg-base-100/90"
+                className="textarea fun-input min-h-28 rounded-2xl"
                 placeholder="오늘 받은 은혜나 적용점을 적어 주세요"
                 value={draft.reflection ?? record?.reflection ?? ''}
                 onChange={(event) =>
@@ -1117,11 +1185,11 @@ function ReadingPlanCard({
               />
             </label>
 
-            <div className="flex items-center justify-between gap-3 rounded-[22px] bg-accent/10 px-4 py-3">
+            <div className="flex items-center justify-between gap-3 rounded-[24px] border border-white/85 bg-gradient-to-r from-yellow-100/80 via-pink-50 to-orange-100/80 px-4 py-3 shadow-sm">
               <p className="text-sm leading-6 text-base-content/70">
                 당일 체크 +2점, 오전 9시 전 +1점, 늦은 체크 +1점
               </p>
-              <button type="submit" className="btn btn-primary rounded-2xl" disabled={busy}>
+              <button type="submit" className="btn gradient-button rounded-2xl" disabled={busy}>
                 {busy ? '저장 중...' : record ? '기록 업데이트' : '읽기 체크'}
               </button>
             </div>
@@ -1132,20 +1200,24 @@ function ReadingPlanCard({
   )
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, index = 0 }) {
+  const theme = getStatCardTheme(index)
+
   return (
-    <article className="rounded-[22px] bg-base-200/60 px-4 py-4">
+    <article
+      className={`rounded-[24px] border border-white/85 bg-gradient-to-br ${theme.shell} px-4 py-4 shadow-sticker`}
+    >
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-base-content/55">
         {label}
       </p>
-      <p className="mt-2 text-lg font-semibold text-base-content">{value}</p>
+      <p className={`mt-2 text-lg font-semibold ${theme.value}`}>{value}</p>
     </article>
   )
 }
 
 function EmptyState({ title }) {
   return (
-    <div className="rounded-[22px] border border-dashed border-stone-300/80 bg-base-200/45 px-4 py-5 text-sm leading-6 text-base-content/65">
+    <div className="rounded-[24px] border border-dashed border-primary/30 bg-white/70 px-4 py-5 text-sm leading-6 text-base-content/65 shadow-sm">
       {title}
     </div>
   )
