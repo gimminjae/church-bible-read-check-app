@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom'
 import { get, ref, remove, set } from 'firebase/database'
+import { ToastContainer, toast } from 'react-toastify'
 import { db } from './lib/firebase'
 import {
   PROGRAM_END,
@@ -35,13 +36,6 @@ const NAV_ITEMS = [
   { to: '/users', label: '개인' },
 ]
 
-const STATUS_TONE_CLASSES = {
-  info: 'bg-info',
-  success: 'bg-success',
-  warning: 'bg-warning',
-  error: 'bg-error',
-}
-
 const STAT_CARD_THEMES = [
   {
     shell: 'from-pink-200/75 via-white to-rose-100/80',
@@ -70,6 +64,38 @@ const RANK_BADGE_THEMES = [
   'from-sky-300 to-cyan-300 text-sky-900',
   'from-violet-300 to-fuchsia-300 text-violet-900',
 ]
+
+const TOAST_OPTIONS = {
+  position: 'top-center',
+  autoClose: 2600,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+}
+
+function notifyToast(tone, message, options = {}) {
+  const mergedOptions = {
+    ...TOAST_OPTIONS,
+    ...options,
+  }
+
+  if (tone === 'success') {
+    toast.success(message, mergedOptions)
+    return
+  }
+
+  if (tone === 'warning') {
+    toast.warning(message, mergedOptions)
+    return
+  }
+
+  if (tone === 'error') {
+    toast.error(message, mergedOptions)
+    return
+  }
+
+  toast.info(message, mergedOptions)
+}
 
 function indexBy(items, keyField) {
   return items.reduce((map, item) => {
@@ -146,10 +172,6 @@ function App() {
   const [readingDrafts, setReadingDrafts] = useState({})
   const [loading, setLoading] = useState(true)
   const [busyAction, setBusyAction] = useState('')
-  const [banner, setBanner] = useState({
-    tone: 'info',
-    message: 'Firebase에서 데이터를 불러오는 중입니다.',
-  })
 
   useEffect(() => {
     let disposed = false
@@ -166,19 +188,21 @@ function App() {
         setClasses(remote.classes)
         setReadingRecords(remote.readingRecords)
         setQtRecords(remote.qtRecords)
-        setBanner({
-          tone: remote.hasSeedData ? 'success' : 'warning',
-          message: remote.hasSeedData
-            ? 'Firebase와 연결되었습니다. 읽기 기록과 QT 출석을 바로 저장할 수 있어요.'
-            : 'Firebase에 초기 데이터가 아직 없습니다. 상단 init 버튼으로 명단을 먼저 올릴 수 있어요.',
-        })
+
+        if (!remote.hasSeedData) {
+          notifyToast(
+            'warning',
+            'Firebase에 초기 데이터가 아직 없습니다. 관리 도구에서 Init 데이터를 먼저 올려 주세요.',
+            { toastId: 'firebase-seed-missing' },
+          )
+        }
       } catch (error) {
         if (!disposed) {
-          setBanner({
-            tone: 'warning',
-            message:
-              'Firebase 연결에 실패해서 기본 명단으로 미리보기 중입니다. 설정을 확인한 뒤 다시 시도해 주세요.',
-          })
+          notifyToast(
+            'warning',
+            'Firebase 연결에 실패해서 기본 명단으로 미리보기 중입니다. 설정을 확인한 뒤 다시 시도해 주세요.',
+            { toastId: 'firebase-preview-mode' },
+          )
         }
       } finally {
         if (!disposed) {
@@ -228,10 +252,7 @@ function App() {
       return
     }
 
-    setBanner({
-      tone: 'warning',
-      message: authError,
-    })
+    notifyToast('warning', authError, { toastId: 'auth-error' })
   }, [authError])
 
   async function handleRefresh() {
@@ -242,12 +263,9 @@ function App() {
       setClasses(remote.classes)
       setReadingRecords(remote.readingRecords)
       setQtRecords(remote.qtRecords)
-      setBanner({ tone: 'success', message: 'Firebase 데이터를 다시 불러왔습니다.' })
+      notifyToast('success', 'Firebase 데이터를 다시 불러왔습니다.')
     } catch (error) {
-      setBanner({
-        tone: 'error',
-        message: '다시 불러오기에 실패했습니다. 잠시 뒤 다시 시도해 주세요.',
-      })
+      notifyToast('error', '다시 불러오기에 실패했습니다. 잠시 뒤 다시 시도해 주세요.')
     } finally {
       setBusyAction('')
     }
@@ -262,15 +280,9 @@ function App() {
       setClasses(remote.classes)
       setReadingRecords(remote.readingRecords)
       setQtRecords(remote.qtRecords)
-      setBanner({
-        tone: 'success',
-        message: '초기 명단과 분반 데이터가 Firebase에 저장되었습니다.',
-      })
+      notifyToast('success', '초기 명단과 분반 데이터가 Firebase에 저장되었습니다.')
     } catch (error) {
-      setBanner({
-        tone: 'error',
-        message: '초기 데이터를 저장하지 못했습니다. Firebase 권한을 확인해 주세요.',
-      })
+      notifyToast('error', '초기 데이터를 저장하지 못했습니다. Firebase 권한을 확인해 주세요.')
     } finally {
       setBusyAction('')
     }
@@ -294,23 +306,15 @@ function App() {
       return
     }
 
-    setBanner({
-      tone: 'success',
-      message: `${result.user.name}님으로 인증되었습니다.`,
-    })
+    notifyToast('success', `${result.user.name}님으로 인증되었습니다.`)
   }
 
   function handleLogout() {
     logout()
-    setBanner({
-      tone: 'info',
-      message: '이름 쿠키를 삭제했고 다시 인증을 기다리고 있습니다.',
-    })
+    notifyToast('info', '이름 쿠키를 삭제했고 다시 인증을 기다리고 있습니다.')
   }
 
-  async function handleReadingSubmit(event, planItem) {
-    event.preventDefault()
-
+  async function handleReadingSubmit(planItem) {
     if (!activeUser) {
       return
     }
@@ -324,19 +328,13 @@ function App() {
       ''
     ).trim()
 
-    if (!verse || !reflection) {
-      setBanner({
-        tone: 'warning',
-        message: '성경 구절과 묵상 내용을 모두 적어야 읽기 체크를 저장할 수 있어요.',
-      })
+    if (!verse) {
+      notifyToast('warning', '성경 구절을 적어야 저장할 수 있어요.')
       return
     }
 
     if (!canSubmitReading(planItem.date, todayKeyValue)) {
-      setBanner({
-        tone: 'warning',
-        message: '미래 날짜는 아직 체크할 수 없습니다.',
-      })
+      notifyToast('warning', '해당 날짜는 아직 체크할 수 없습니다.')
       return
     }
 
@@ -372,15 +370,9 @@ function App() {
           [planItem.date]: nextRecord,
         },
       }))
-      setBanner({
-        tone: 'success',
-        message: `${activeUser.name}님의 ${planItem.chapter} 읽기 기록을 저장했습니다.`,
-      })
+      notifyToast('success', `${activeUser.name}님의 ${planItem.chapter} 읽기 기록을 저장했습니다.`)
     } catch (error) {
-      setBanner({
-        tone: 'error',
-        message: '읽기 기록 저장에 실패했습니다. 네트워크 상태를 확인해 주세요.',
-      })
+      notifyToast('error', '읽기 기록 저장에 실패했습니다. 네트워크 상태를 확인해 주세요.')
     } finally {
       setBusyAction('')
     }
@@ -422,17 +414,14 @@ function App() {
 
         return { ...current, [qtDate]: currentDateRecords }
       })
-      setBanner({
-        tone: 'success',
-        message: alreadyChecked
+      notifyToast(
+        'success',
+        alreadyChecked
           ? `${targetUser.name} 학생의 QT 출석 체크를 해제했습니다.`
           : `${targetUser.name} 학생의 QT 출석을 기록했습니다.`,
-      })
+      )
     } catch (error) {
-      setBanner({
-        tone: 'error',
-        message: 'QT 출석 저장에 실패했습니다. Firebase 권한을 확인해 주세요.',
-      })
+      notifyToast('error', 'QT 출석 저장에 실패했습니다. Firebase 권한을 확인해 주세요.')
     } finally {
       setBusyAction('')
     }
@@ -440,6 +429,7 @@ function App() {
 
   return (
     <div data-theme="church" className="min-h-screen">
+      <ToastContainer newestOnTop limit={3} />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pb-28 pt-4 sm:max-w-6xl sm:px-6 sm:pb-12">
         <header className="glass-card mb-4 overflow-hidden p-4 sm:p-5">
           <div className="drift-slow absolute -right-14 -top-20 h-32 w-32 rounded-full bg-accent/25 blur-3xl" />
@@ -476,12 +466,12 @@ function App() {
             </div>
 
             <div className="mt-3 flex items-center gap-2 rounded-[20px] border border-white/80 bg-white/72 px-3 py-2 text-xs text-base-content/65 shadow-sm">
-              <span
-                className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                  STATUS_TONE_CLASSES[banner.tone] ?? STATUS_TONE_CLASSES.info
-                }`}
-              />
-              <p className="truncate">{banner.message}</p>
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+              <p className="truncate">
+                {isAuthenticated
+                  ? '읽기 체크와 QT 출석 결과는 토스트 알림으로 바로 안내돼요.'
+                  : '이름을 입력하면 내 기록과 점수를 바로 확인할 수 있어요.'}
+              </p>
             </div>
 
             <details className="collapse collapse-arrow mt-3 rounded-[24px] border border-white/80 bg-white/72 shadow-sm">
@@ -534,7 +524,6 @@ function App() {
         ) : !isAuthenticated ? (
           <main className="flex-1">
             <AuthGate
-              authError={authError}
               defaultName={authName}
               users={orderedUsers}
               onLogin={handleLogin}
@@ -613,7 +602,7 @@ function App() {
   )
 }
 
-function AuthGate({ authError, defaultName, users, onLogin }) {
+function AuthGate({ defaultName, users, onLogin }) {
   const [nameInput, setNameInput] = useState(defaultName ?? '')
 
   useEffect(() => {
@@ -670,7 +659,7 @@ function AuthGate({ authError, defaultName, users, onLogin }) {
             사용하며, 인증 뒤에는 역할에 맞는 화면 권한이 적용됩니다.
           </p>
           <p className="mt-2 text-sm leading-6 text-error">
-            {authError || '예: 김이룬, 김민재, 박종현'}
+            예: 김이룬, 김민재, 박종현
           </p>
         </div>
 
@@ -711,17 +700,30 @@ function DashboardPage({
 
   const phaseCopy =
     programPhase === 'before'
-      ? '4월 1일 일정 시작을 준비 중입니다.'
+      ? `${formatDateLabel(PROGRAM_START, { month: 'numeric', day: 'numeric' })} 일정 시작을 준비 중입니다.`
       : programPhase === 'after'
-        ? '61일 읽기 일정이 마무리되었습니다.'
+        ? `${READING_PLAN.length}일 읽기 일정이 마무리되었습니다.`
         : nextPendingItem?.date === todayKeyValue
           ? '오늘 분량을 체크하고 +2점, 오전 9시 전이면 +1점을 더 받을 수 있어요.'
           : '놓친 날짜도 늦게 체크할 수 있으며 이 경우 +1점이 반영됩니다.'
 
-  const monthGroups = [4, 5].map((month) => ({
-    month,
-    items: READING_PLAN.filter((item) => item.month === month),
-  }))
+  const monthGroups = Object.values(
+    READING_PLAN.reduce((groups, item) => {
+      const monthKey = item.date.slice(0, 7)
+
+      if (!groups[monthKey]) {
+        groups[monthKey] = {
+          key: monthKey,
+          month: Number(item.date.slice(5, 7)),
+          items: [],
+        }
+      }
+
+      groups[monthKey].items.push(item)
+
+      return groups
+    }, {}),
+  )
 
   return (
     <div className="space-y-4">
@@ -841,7 +843,7 @@ function DashboardPage({
         </div>
 
         {monthGroups.map((group) => (
-          <section key={group.month} className="space-y-3">
+          <section key={group.key} className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <h4 className="font-display text-xl text-base-content">{group.month}월 일정</h4>
               <span className="fun-pill">
@@ -1094,6 +1096,14 @@ function ReadingPlanCard({
   onDraftChange,
   onSubmit,
 }) {
+  const [isOpen, setIsOpen] = useState(() => planItem.date === todayKeyValue)
+
+  useEffect(() => {
+    if (planItem.date === todayKeyValue) {
+      setIsOpen(true)
+    }
+  }, [planItem.date, todayKeyValue])
+
   const status = getReadingStatus({
     dateKey: planItem.date,
     record,
@@ -1103,7 +1113,8 @@ function ReadingPlanCard({
 
   return (
     <details
-      open={planItem.date === todayKeyValue}
+      open={isOpen}
+      onToggle={(event) => setIsOpen(event.currentTarget.open)}
       className="collapse collapse-arrow overflow-hidden rounded-[28px] border border-white/90 bg-gradient-to-br from-white/95 via-white/85 to-sky-50/85 shadow-candy"
     >
       <summary className="collapse-title px-4 py-4">
@@ -1162,12 +1173,11 @@ function ReadingPlanCard({
             아직 해당 날짜가 오지 않아 체크를 열지 않았습니다.
           </div>
         ) : (
-          <form className="space-y-3" onSubmit={(event) => onSubmit(event, planItem)}>
+          <div className="space-y-3">
             <label className="form-control">
               <span className="mb-2 text-sm font-semibold text-base-content/70">성경 구절</span>
-              <input
-                type="text"
-                className="input fun-input rounded-2xl"
+              <textarea
+                className="textarea fun-input min-h-28 rounded-2xl"
                 placeholder="기억에 남은 구절을 적어 주세요"
                 value={draft.verse ?? record?.verse ?? ''}
                 onChange={(event) =>
@@ -1182,7 +1192,7 @@ function ReadingPlanCard({
               </span>
               <textarea
                 className="textarea fun-input min-h-28 rounded-2xl"
-                placeholder="오늘 받은 은혜나 적용점을 적어 주세요"
+                placeholder="묵상한 내용을 적어주세요"
                 value={draft.reflection ?? record?.reflection ?? ''}
                 onChange={(event) =>
                   onDraftChange(userId, planItem.date, 'reflection', event.target.value)
@@ -1194,11 +1204,16 @@ function ReadingPlanCard({
               <p className="text-sm leading-6 text-base-content/70">
                 당일 체크 +2점, 오전 9시 전 +1점, 늦은 체크 +1점
               </p>
-              <button type="submit" className="btn gradient-button rounded-2xl" disabled={busy}>
+              <button
+                type="button"
+                className="btn gradient-button rounded-2xl"
+                disabled={busy}
+                onClick={() => onSubmit(planItem)}
+              >
                 {busy ? '저장 중...' : record ? '기록 업데이트' : '읽기 체크'}
               </button>
             </div>
-          </form>
+          </div>
         )}
       </div>
     </details>

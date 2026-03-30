@@ -150,3 +150,38 @@ body::before {
     transform: translate3d(0, 10px, 0) scale(1.05);
   }
 }
+
+.Toastify__toast-container {
+  width: min(92vw, 420px);
+}
+
+.Toastify__toast {
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(246, 244, 255, 0.94));
+  box-shadow: 0 18px 44px rgba(112, 89, 255, 0.16);
+  color: #3e3269;
+  backdrop-filter: blur(12px);
+}
+
+.Toastify__toast-body {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.Toastify__progress-bar--success {
+  background: linear-gradient(90deg, #36d98d, #4cc9ff);
+}
+
+.Toastify__progress-bar--warning {
+  background: linear-gradient(90deg, #ffd84f, #ffb84e);
+}
+
+.Toastify__progress-bar--error {
+  background: linear-gradient(90deg, #ff6a7e, #ff5fa2);
+}
+
+.Toastify__progress-bar--info {
+  background: linear-gradient(90deg, #7666ff, #72a8ff);
+}

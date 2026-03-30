@@ -1,9 +1,8 @@
-export const PROGRAM_START = '2026-04-01'
-export const PROGRAM_END = '2026-05-31'
-export const PROGRAM_LABEL = '2026.04.01 - 2026.05.31'
+export const PROGRAM_START = '2026-03-25'
 export const MORNING_BONUS_HOUR = 9
 
 const READING_SEQUENCE = [
+  { name: '에베소서', start: 1, end: 6 },
   { name: '빌립보서', start: 3, end: 4 },
   { name: '골로새서', start: 1, end: 4 },
   { name: '데살로니가전서', start: 1, end: 5 },
@@ -58,13 +57,27 @@ function buildPassages() {
   })
 }
 
+function shiftDateKey(dateKey, offsetDays) {
+  const cursor = parseDateKey(dateKey)
+  cursor.setDate(cursor.getDate() + offsetDays)
+  return toDateKey(cursor)
+}
+
+function formatPeriodLabel(startDate, endDate) {
+  return `${startDate.replaceAll('-', '.')} - ${endDate.replaceAll('-', '.')}`
+}
+
+const PASSAGES = buildPassages()
+
+export const PROGRAM_END = shiftDateKey(PROGRAM_START, PASSAGES.length - 1)
+export const PROGRAM_LABEL = formatPeriodLabel(PROGRAM_START, PROGRAM_END)
+
 export function buildReadingPlan() {
   const dates = enumerateDates(PROGRAM_START, PROGRAM_END)
-  const passages = buildPassages()
 
   return dates.map((date, index) => ({
     date,
-    chapter: passages[index],
+    chapter: PASSAGES[index],
     month: Number(date.slice(5, 7)),
   }))
 }
