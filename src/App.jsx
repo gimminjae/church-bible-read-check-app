@@ -15,6 +15,7 @@ import {
   toDateKey,
 } from './lib/program'
 import {
+  QT_ATTENDANCE_POINT,
   buildClassStats,
   buildRankMap,
   buildUserStats,
@@ -205,7 +206,7 @@ function App() {
   } = useAuthUser(orderedUsers)
 
   const todayKeyValue = toDateKey()
-  const userStatsMap = buildUserStats(users, readingRecords)
+  const userStatsMap = buildUserStats(users, readingRecords, qtRecords)
   const userLeaderboard = sortUsersByScore(Object.values(userStatsMap))
   const classLeaderboard = sortClassesByScore(
     buildClassStats(classes, users, userStatsMap),
@@ -883,7 +884,8 @@ function ClassesPage({ classLeaderboard }) {
         <p className="subtle-label">Class Ranking</p>
         <h2 className="section-title mt-1">분반 정보</h2>
         <p className="mt-3 text-sm leading-6 text-base-content/70">
-          분반별 평균 점수로 정렬했고, 상위 5개 분반을 먼저 강조해 보여줍니다.
+          성경 읽기 점수와 QT 참석 점수를 함께 반영한 평균 점수로 정렬했고, 상위 5개 분반을
+          먼저 강조해 보여줍니다.
         </p>
       </section>
 
@@ -970,8 +972,8 @@ function UsersPage({
         <p className="subtle-label">Personal Ranking</p>
         <h2 className="section-title mt-1">개인 정보</h2>
         <p className="mt-3 text-sm leading-6 text-base-content/70">
-          점수 기준 상위 10명을 먼저 보여주고, 교사 권한 계정은 QT 참석 체크 도구를 사용할 수
-          있습니다.
+          성경 읽기 점수와 QT 참석 점수를 합산해 상위 10명을 먼저 보여주고, 교사 권한 계정은
+          QT 참석 체크 도구를 사용할 수 있습니다.
         </p>
       </section>
 
@@ -1001,7 +1003,7 @@ function UsersPage({
             <div className="text-right">
               <p className="text-xl font-semibold text-primary">{user.score}점</p>
               <p className="text-xs text-base-content/55">
-                당일 완료 {user.onTimeCount}회
+                읽기 {user.readingScore}점 · QT {user.qtScore}점
               </p>
             </div>
           </article>
@@ -1013,6 +1015,9 @@ function UsersPage({
           <div>
             <p className="subtle-label">Morning QT</p>
             <h3 className="section-title mt-1">QT 참석 체크</h3>
+            <p className="mt-2 text-sm text-base-content/60">
+              QT 참석 1회당 {QT_ATTENDANCE_POINT}점이 개인 점수와 분반 점수에 반영됩니다.
+            </p>
           </div>
           <label className="form-control">
             <span className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">

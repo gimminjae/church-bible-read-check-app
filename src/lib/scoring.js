@@ -1,4 +1,5 @@
 const TEACHER_ROLES = ['TEACHER', 'TEACHER_ADMIN', 'VICE_LEADER']
+export const QT_ATTENDANCE_POINT = 1
 
 const ROLE_ORDER = {
   VICE_LEADER: 0,
@@ -62,16 +63,32 @@ export function canManageQt(currentUser, targetUser) {
   return currentUser.classId === targetUser.classId
 }
 
-export function buildUserStats(users, readingRecords) {
+function countQtAttendance(qtRecords, userId) {
+  return Object.values(qtRecords ?? {}).reduce((count, dateRecords) => {
+    if (dateRecords?.[userId]?.attended) {
+      return count + 1
+    }
+
+    return count
+  }, 0)
+}
+
+export function buildUserStats(users, readingRecords, qtRecords = {}) {
   return users.reduce((statsMap, user) => {
     const records = Object.values(readingRecords?.[user.userId] ?? {})
-    const score = records.reduce((sum, record) => sum + (Number(record.score) || 0), 0)
+    const readingScore = records.reduce((sum, record) => sum + (Number(record.score) || 0), 0)
+    const qtAttendanceCount = countQtAttendance(qtRecords, user.userId)
+    const qtScore = qtAttendanceCount * QT_ATTENDANCE_POINT
+    const score = readingScore + qtScore
     const morningCount = records.filter((record) => Number(record.score) === 3).length
     const onTimeCount = records.filter((record) => Number(record.score) >= 2).length
     const lateCount = records.filter((record) => Number(record.score) === 1).length
 
     statsMap[user.userId] = {
       ...user,
+      readingScore,
+      qtScore,
+      qtAttendanceCount,
       score,
       morningCount,
       onTimeCount,
