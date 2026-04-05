@@ -97,13 +97,6 @@ function notifyToast(tone, message, options = {}) {
   toast.info(message, mergedOptions)
 }
 
-function indexBy(items, keyField) {
-  return items.reduce((map, item) => {
-    map[item[keyField]] = item
-    return map
-  }, {})
-}
-
 async function fetchRemoteState() {
   const snapshot = await get(ref(db))
   const payload = snapshot.val() ?? {}
@@ -115,20 +108,6 @@ async function fetchRemoteState() {
     readingRecords: normalizeMap(payload.readingRecords),
     qtRecords: normalizeMap(payload.qtRecords),
   }
-}
-
-async function initializeRemoteState() {
-  await set(ref(db), {
-    meta: {
-      seededAt: new Date().toISOString(),
-      programStart: PROGRAM_START,
-      programEnd: PROGRAM_END,
-    },
-    users: indexBy(seedUsers, 'userId'),
-    classes: indexBy(seedClasses, 'classId'),
-    readingRecords: {},
-    qtRecords: {},
-  })
 }
 
 function getDraftKey(userId, dateKey) {
@@ -192,7 +171,7 @@ function App() {
         if (!remote.hasSeedData) {
           notifyToast(
             'warning',
-            'Firebase에 초기 데이터가 아직 없습니다. 관리 도구에서 Init 데이터를 먼저 올려 주세요.',
+            'Firebase에 초기 데이터가 아직 없습니다. 설정을 확인한 뒤 새로고침을 눌러 주세요.',
             { toastId: 'firebase-seed-missing' },
           )
         }
@@ -226,7 +205,6 @@ function App() {
     hydratingAuth,
     isAuthenticated,
     loginByName,
-    logout,
   } = useAuthUser(orderedUsers)
 
   const todayKeyValue = toDateKey()
@@ -271,22 +249,6 @@ function App() {
     }
   }
 
-  async function handleInitialize() {
-    setBusyAction('init')
-    try {
-      await initializeRemoteState()
-      const remote = await fetchRemoteState()
-      setUsers(remote.users)
-      setClasses(remote.classes)
-      setReadingRecords(remote.readingRecords)
-      setQtRecords(remote.qtRecords)
-      notifyToast('success', '초기 명단과 분반 데이터가 Firebase에 저장되었습니다.')
-    } catch (error) {
-      notifyToast('error', '초기 데이터를 저장하지 못했습니다. Firebase 권한을 확인해 주세요.')
-    } finally {
-      setBusyAction('')
-    }
-  }
 
   function handleDraftChange(userId, dateKey, field, value) {
     const draftKey = getDraftKey(userId, dateKey)
@@ -307,11 +269,6 @@ function App() {
     }
 
     notifyToast('success', `${result.user.name}님으로 인증되었습니다.`)
-  }
-
-  function handleLogout() {
-    logout()
-    notifyToast('info', '이름 쿠키를 삭제했고 다시 인증을 기다리고 있습니다.')
   }
 
   async function handleReadingSubmit(planItem) {
@@ -482,29 +439,11 @@ function App() {
                 <div className="grid gap-2 sm:grid-cols-3">
                   <button
                     type="button"
-                    className="btn gradient-button rounded-2xl"
-                    onClick={handleInitialize}
-                    disabled={busyAction === 'init'}
-                  >
-                    {busyAction === 'init' ? '저장 중...' : 'Init 데이터'}
-                  </button>
-
-                  <button
-                    type="button"
                     className="btn rounded-2xl border border-white/85 bg-white/85 text-base-content shadow-sm hover:bg-sky-50"
                     onClick={handleRefresh}
                     disabled={busyAction === 'refresh'}
                   >
                     {busyAction === 'refresh' ? '동기화 중...' : '새로고침'}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn rounded-2xl border border-violet-200 bg-violet-50/80 text-violet-700 shadow-sm hover:bg-violet-100"
-                    onClick={handleLogout}
-                    disabled={!isAuthenticated}
-                  >
-                    다시 인증
                   </button>
                 </div>
               </div>
