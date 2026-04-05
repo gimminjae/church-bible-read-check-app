@@ -21,6 +21,7 @@ import {
   buildRankMap,
   buildUserStats,
   canManageQt,
+  isTeacherRole,
   normalizeCollection,
   normalizeMap,
   sortClassesByScore,
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   { to: '/', label: '내 현황' },
   { to: '/classes', label: '분반' },
   { to: '/users', label: '개인' },
+  { to: '/records', label: '기록 수정' },
 ]
 
 const STAT_CARD_THEMES = [
@@ -224,6 +226,7 @@ function App() {
   const manageableStudents = sortUsersForProfile(
     users.filter((user) => canManageQt(activeUser, user)),
   )
+  const canEditRecords = isTeacherRole(activeUser?.role)
 
   useEffect(() => {
     if (!authError) {
@@ -384,6 +387,107 @@ function App() {
     }
   }
 
+  async function handleRecordSave({ targetUserId, dateKey, verse, reflection, attended }) {
+    const targetUser = users.find((user) => user.userId === Number(targetUserId))
+
+    if (!activeUser || !canEditRecords || !targetUser) {
+      notifyToast('warning', '기록을 수정할 권한이 없습니다.')
+      return
+    }
+
+    const planItem = READING_PLAN.find((item) => item.date === dateKey)
+
+    if (!planItem) {
+      notifyToast('warning', '해당 날짜는 읽기 계획에 포함되지 않습니다.')
+      return
+    }
+
+    setBusyAction('record-save')
+
+    const existingRecord = readingRecords[targetUser.userId]?.[dateKey]
+    const now = new Date().toISOString()
+    const nextVerse = verse.trim()
+    const nextReflection = reflection.trim()
+
+    try {
+      if (nextVerse) {
+        const nextReading = {
+          userId: targetUser.userId,
+          userName: targetUser.name,
+          classId: targetUser.classId ?? null,
+          className: targetUser.className ?? null,
+          date: dateKey,
+          passage: planItem.chapter,
+          verse: nextVerse,
+          reflection: nextReflection,
+          score:
+            existingRecord?.score ??
+            calculateReadingScore({
+              planDate: dateKey,
+              submittedAt: now,
+            }),
+          submittedAt: existingRecord?.submittedAt ?? now,
+          updatedAt: now,
+        }
+
+        await set(ref(db, `readingRecords/${targetUser.userId}/${dateKey}`), nextReading)
+        setReadingRecords((current) => ({
+          ...current,
+          [targetUser.userId]: {
+            ...(current[targetUser.userId] ?? {}),
+            [dateKey]: nextReading,
+          },
+        }))
+      } else if (existingRecord) {
+        await remove(ref(db, `readingRecords/${targetUser.userId}/${dateKey}`))
+        setReadingRecords((current) => {
+          const nextUserRecords = { ...(current[targetUser.userId] ?? {}) }
+          delete nextUserRecords[dateKey]
+
+          return {
+            ...current,
+            [targetUser.userId]: nextUserRecords,
+          }
+        })
+      }
+
+      if (attended) {
+        const qtPayload = {
+          attended: true,
+          checkedBy: activeUser.userId,
+          checkedByName: activeUser.name,
+          checkedAt: now,
+        }
+
+        await set(ref(db, `qtRecords/${dateKey}/${targetUser.userId}`), qtPayload)
+        setQtRecords((current) => ({
+          ...current,
+          [dateKey]: {
+            ...(current[dateKey] ?? {}),
+            [targetUser.userId]: qtPayload,
+          },
+        }))
+      } else if (qtRecords[dateKey]?.[targetUser.userId]) {
+        await remove(ref(db, `qtRecords/${dateKey}/${targetUser.userId}`))
+        setQtRecords((current) => {
+          const nextDateRecords = { ...(current[dateKey] ?? {}) }
+          delete nextDateRecords[targetUser.userId]
+
+          return {
+            ...current,
+            [dateKey]: nextDateRecords,
+          }
+        })
+      }
+
+      notifyToast('success', `${targetUser.name} 학생의 ${formatDateLabel(dateKey)} 기록을 저장했습니다.`)
+    } catch (error) {
+      notifyToast('error', '기록 저장에 실패했습니다. Firebase 권한을 확인해 주세요.')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
   return (
     <div data-theme="church" className="min-h-screen">
       <ToastContainer newestOnTop limit={3} />
@@ -508,6 +612,19 @@ function App() {
                   />
                 }
               />
+              <Route
+                path="/records"
+                element={
+                  <RecordsEditPage
+                    busy={busyAction === 'record-save'}
+                    canEdit={canEditRecords}
+                    users={sortUsersForProfile(users.filter((user) => user.role === 'STUDENT'))}
+                    readingRecords={readingRecords}
+                    qtRecords={qtRecords}
+                    onSave={handleRecordSave}
+                  />
+                }
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
@@ -515,7 +632,7 @@ function App() {
 
         {isAuthenticated ? (
           <nav className="nav-shell fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 p-2 sm:static sm:mt-6 sm:w-full sm:max-w-none sm:translate-x-0">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {NAV_ITEMS.map((item) => (
                 <NavLink
                   key={item.to}
@@ -537,6 +654,134 @@ function App() {
           </nav>
         ) : null}
       </div>
+    </div>
+  )
+}
+
+function RecordsEditPage({ busy, canEdit, users, readingRecords, qtRecords, onSave }) {
+  const [dateKey, setDateKey] = useState(() => toDateKey())
+  const [targetUserId, setTargetUserId] = useState(() => users[0]?.userId ? String(users[0].userId) : '')
+  const [verse, setVerse] = useState('')
+  const [reflection, setReflection] = useState('')
+  const [attended, setAttended] = useState(false)
+
+  useEffect(() => {
+    if (!targetUserId && users[0]?.userId) {
+      setTargetUserId(String(users[0].userId))
+    }
+  }, [targetUserId, users])
+
+  useEffect(() => {
+    if (!targetUserId || !dateKey) {
+      setVerse('')
+      setReflection('')
+      setAttended(false)
+      return
+    }
+
+    const userReading = readingRecords[Number(targetUserId)]?.[dateKey]
+    setVerse(userReading?.verse ?? '')
+    setReflection(userReading?.reflection ?? '')
+    setAttended(Boolean(qtRecords[dateKey]?.[Number(targetUserId)]?.attended))
+  }, [dateKey, qtRecords, readingRecords, targetUserId])
+
+  function handleSubmit(event) {
+    event.preventDefault()
+
+    if (!targetUserId || !dateKey) {
+      return
+    }
+
+    onSave({
+      targetUserId,
+      dateKey,
+      verse,
+      reflection,
+      attended,
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <section className="story-card p-5">
+        <p className="subtle-label">Record Editor</p>
+        <h2 className="section-title mt-1">날짜별 유저 데이터 수정</h2>
+        <p className="mt-3 text-sm leading-6 text-base-content/70">
+          특정 학생과 날짜를 선택한 뒤, 성경 읽기 기록(구절/묵상)과 QT 참석 여부를 한 번에 수정할
+          수 있습니다. 성경 구절을 비우고 저장하면 해당 날짜 읽기 기록은 삭제됩니다.
+        </p>
+      </section>
+
+      {!canEdit ? (
+        <EmptyState title="교사 권한 계정만 기록 수정 페이지를 사용할 수 있습니다." />
+      ) : (
+        <section className="section-card">
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="form-control">
+                <span className="mb-2 text-sm font-semibold text-base-content/70">학생</span>
+                <select
+                  className="select fun-input rounded-2xl"
+                  value={targetUserId}
+                  onChange={(event) => setTargetUserId(event.target.value)}
+                >
+                  {users.map((user) => (
+                    <option key={user.userId} value={user.userId}>
+                      {user.name} · {user.className}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="form-control">
+                <span className="mb-2 text-sm font-semibold text-base-content/70">날짜</span>
+                <input
+                  type="date"
+                  className="input fun-input rounded-2xl"
+                  min={PROGRAM_START}
+                  max={PROGRAM_END}
+                  value={dateKey}
+                  onChange={(event) => setDateKey(event.target.value)}
+                />
+              </label>
+            </div>
+
+            <label className="form-control">
+              <span className="mb-2 text-sm font-semibold text-base-content/70">성경 구절</span>
+              <textarea
+                className="textarea fun-input min-h-28 rounded-2xl"
+                placeholder="빈 값으로 저장하면 읽기 기록이 삭제됩니다"
+                value={verse}
+                onChange={(event) => setVerse(event.target.value)}
+              />
+            </label>
+
+            <label className="form-control">
+              <span className="mb-2 text-sm font-semibold text-base-content/70">묵상한 내용</span>
+              <textarea
+                className="textarea fun-input min-h-28 rounded-2xl"
+                placeholder="묵상한 내용을 입력해 주세요"
+                value={reflection}
+                onChange={(event) => setReflection(event.target.value)}
+              />
+            </label>
+
+            <label className="label flex cursor-pointer items-center justify-start gap-3 rounded-2xl border border-white/80 bg-white/70 px-4 py-3">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-primary"
+                checked={attended}
+                onChange={(event) => setAttended(event.target.checked)}
+              />
+              <span className="label-text text-sm text-base-content/70">해당 날짜 QT 참석</span>
+            </label>
+
+            <button type="submit" className="btn gradient-button rounded-2xl" disabled={busy}>
+              {busy ? '저장 중...' : '날짜별 기록 저장'}
+            </button>
+          </form>
+        </section>
+      )}
     </div>
   )
 }
